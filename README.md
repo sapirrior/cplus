@@ -16,6 +16,7 @@ C+ is a modern, production-grade BASIC-style interpreter written in C++17. It's 
 - [Usage](#usage)
 - [Language Guide](#language-guide)
 - [Examples](#examples)
+- [Documentation](docs/01-introduction.md)
 - [License](#license)
 
 ## Installation
