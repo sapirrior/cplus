@@ -1,5 +1,16 @@
 #include "Lexer.hpp"
 #include <cctype>
+#include <unordered_map>
+
+static std::unordered_map<std::string, TokenType> keywords = {
+    {"AND", TokenType::AND}, {"OR", TokenType::OR}, {"NOT", TokenType::NOT},
+    {"PRINT", TokenType::PRINT}, {"LET", TokenType::LET}, {"IF", TokenType::IF},
+    {"THEN", TokenType::THEN}, {"ELSE", TokenType::ELSE}, {"END", TokenType::END},
+    {"FOR", TokenType::FOR}, {"TO", TokenType::TO}, {"NEXT", TokenType::NEXT},
+    {"FUNCTION", TokenType::FUNCTION}, {"CALL", TokenType::CALL}, {"RETURN", TokenType::RETURN},
+    {"INPUT", TokenType::INPUT}, {"REM", TokenType::REM}, {"TRY", TokenType::TRY},
+    {"CATCH", TokenType::CATCH}, {"ARRAY", TokenType::ARRAY}
+};
 
 char Lexer::advance() {
     current++;
@@ -26,7 +37,7 @@ bool Lexer::match(char expected) {
 }
 
 bool Lexer::isAtEnd() {
-    return current >= source.length();
+    return current >= (int)source.length();
 }
 
 Token Lexer::makeToken(TokenType type) {
@@ -48,13 +59,22 @@ std::vector<Token> Lexer::scanTokens() {
         switch (c) {
             case '(': tokens.push_back(makeToken(TokenType::LEFT_PAREN)); break;
             case ')': tokens.push_back(makeToken(TokenType::RIGHT_PAREN)); break;
+            case '[': tokens.push_back(makeToken(TokenType::LEFT_BRACKET)); break;
+            case ']': tokens.push_back(makeToken(TokenType::RIGHT_BRACKET)); break;
+            case ',': tokens.push_back(makeToken(TokenType::COMMA)); break;
+            case '.': tokens.push_back(makeToken(TokenType::DOT)); break;
             case '-': tokens.push_back(makeToken(TokenType::MINUS)); break;
             case '+': tokens.push_back(makeToken(TokenType::PLUS)); break;
             case '*': tokens.push_back(makeToken(TokenType::STAR)); break;
             case '/': tokens.push_back(makeToken(TokenType::SLASH)); break;
-            case '=': tokens.push_back(makeToken(TokenType::EQUAL)); break;
+            case '#': // Comment
+                while (peek() != '\n' && !isAtEnd()) advance();
+                break;
+            case '=':
+                tokens.push_back(makeToken(match('=') ? TokenType::EQUAL_EQUAL : TokenType::EQUAL));
+                break;
             case '<':
-                if (match('>')) tokens.push_back(makeToken(TokenType::NOT_EQUAL));
+                if (match('>')) tokens.push_back(makeToken(TokenType::BANG_EQUAL));
                 else if (match('=')) tokens.push_back(makeToken(TokenType::LESS_EQUAL));
                 else tokens.push_back(makeToken(TokenType::LESS));
                 break;
@@ -98,16 +118,17 @@ std::vector<Token> Lexer::scanTokens() {
                 } else if (std::isalpha(c)) {
                     while (std::isalnum(peek()) || peek() == '_') advance();
                     std::string text = source.substr(start, current - start);
-                    TokenType type = TokenType::IDENTIFIER;
-                    if (text == "PRINT") type = TokenType::PRINT;
-                    else if (text == "LET") type = TokenType::LET;
-                    else if (text == "IF") type = TokenType::IF;
-                    else if (text == "THEN") type = TokenType::THEN;
-                    else if (text == "END") type = TokenType::END;
-                    else if (text == "FOR") type = TokenType::FOR;
-                    else if (text == "TO") type = TokenType::TO;
-                    else if (text == "NEXT") type = TokenType::NEXT;
-                    tokens.push_back(makeToken(type));
+                    
+                    if (text == "REM") {
+                        while (peek() != '\n' && !isAtEnd()) advance();
+                        break;
+                    }
+                    
+                    if (keywords.count(text)) {
+                        tokens.push_back(makeToken(keywords[text]));
+                    } else {
+                        tokens.push_back(makeToken(TokenType::IDENTIFIER));
+                    }
                 } else {
                     tokens.push_back(makeToken(TokenType::ERROR_TOKEN));
                 }

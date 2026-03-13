@@ -42,6 +42,8 @@ void run(const std::string& source, std::shared_ptr<Environment> env) {
         std::cerr << e.what() << std::endl;
     } catch (const RuntimeError& e) {
         std::cerr << e.what() << std::endl;
+    } catch (...) {
+        std::cerr << "An unknown error occurred during execution." << std::endl;
     }
 }
 
@@ -59,7 +61,7 @@ void runFile(const std::string& path) {
 void runPrompt() {
     auto env = std::make_shared<Environment>();
     std::string line;
-    std::cout << "C+ REPL. Type 'exit' to quit." << std::endl;
+    std::cout << "C+ REPL (C++20). Type 'exit' to quit." << std::endl;
     for (;;) {
         std::cout << "> ";
         if (!std::getline(std::cin, line)) break;

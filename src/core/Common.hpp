@@ -1,14 +1,32 @@
 #pragma once
 #include <string>
-#include <stdexcept>
+#include <vector>
+#include <memory>
+#include <variant>
 #include <iostream>
+#include <stdexcept>
 
 enum class TokenType {
-    LEFT_PAREN, RIGHT_PAREN,
-    MINUS, PLUS, SLASH, STAR,
-    EQUAL, LESS, LESS_EQUAL, GREATER, GREATER_EQUAL, NOT_EQUAL,
+    // Single-character tokens.
+    LEFT_PAREN, RIGHT_PAREN, LEFT_BRACKET, RIGHT_BRACKET,
+    COMMA, DOT, MINUS, PLUS, SLASH, STAR,
+
+    // One or two character tokens.
+    EQUAL, EQUAL_EQUAL,
+    GREATER, GREATER_EQUAL,
+    LESS, LESS_EQUAL,
+    BANG_EQUAL,
+
+    // Literals.
     IDENTIFIER, STRING, NUMBER,
-    PRINT, LET, IF, THEN, END, FOR, TO, NEXT,
+
+    // Keywords.
+    AND, OR, NOT,
+    PRINT, LET, IF, THEN, ELSE, END, FOR, TO, NEXT,
+    FUNCTION, CALL, RETURN,
+    INPUT, REM, TRY, CATCH,
+    ARRAY,
+
     NEWLINE, END_OF_FILE, ERROR_TOKEN
 };
 
@@ -20,27 +38,47 @@ struct Token {
     int col = 1;
 };
 
-struct Value {
-    enum Type { NUMBER, STRING, NIL } type;
-    double number = 0;
-    std::string string = "";
+struct Value;
+using Array = std::vector<std::shared_ptr<Value>>;
 
-    Value() : type(NIL) {}
-    Value(double n) : type(NUMBER), number(n) {}
-    Value(std::string s) : type(STRING), string(s) {}
+struct Value {
+    std::variant<std::monostate, double, std::string, Array> data;
+
+    Value() : data(std::monostate{}) {}
+    Value(double n) : data(n) {}
+    Value(std::string s) : data(s) {}
+    Value(Array a) : data(a) {}
+
+    bool isNumber() const { return std::holds_alternative<double>(data); }
+    bool isString() const { return std::holds_alternative<std::string>(data); }
+    bool isArray() const { return std::holds_alternative<Array>(data); }
+    bool isNil() const { return std::holds_alternative<std::monostate>(data); }
+
+    double asNumber() const { return std::get<double>(data); }
+    std::string asString() const { return std::get<std::string>(data); }
+    Array asArray() const { return std::get<Array>(data); }
 
     bool isTruthy() const {
-        if (type == NIL) return false;
-        if (type == NUMBER) return number != 0;
-        if (type == STRING) return !string.empty();
+        if (isNil()) return false;
+        if (isNumber()) return asNumber() != 0;
+        if (isString()) return !asString().empty();
+        if (isArray()) return !asArray().empty();
         return false;
     }
 };
 
 inline std::ostream& operator<<(std::ostream& os, const Value& val) {
-    if (val.type == Value::NUMBER) os << val.number;
-    else if (val.type == Value::STRING) os << val.string;
-    else os << "nil";
+    if (val.isNumber()) os << val.asNumber();
+    else if (val.isString()) os << val.asString();
+    else if (val.isArray()) {
+        os << "[";
+        auto arr = val.asArray();
+        for (size_t i = 0; i < arr.size(); ++i) {
+            os << *arr[i];
+            if (i < arr.size() - 1) os << ", ";
+        }
+        os << "]";
+    } else os << "nil";
     return os;
 }
 
