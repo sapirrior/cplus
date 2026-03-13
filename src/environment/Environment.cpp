@@ -1,4 +1,5 @@
 #include "Environment.hpp"
+#include <stdexcept>
 
 Environment::Environment() : enclosing(nullptr) {}
 Environment::Environment(std::shared_ptr<Environment> enclosing) : enclosing(enclosing) {}

@@ -3,13 +3,11 @@
 #include <unordered_map>
 
 static std::unordered_map<std::string, TokenType> keywords = {
-    {"AND", TokenType::AND}, {"OR", TokenType::OR}, {"NOT", TokenType::NOT},
-    {"PRINT", TokenType::PRINT}, {"LET", TokenType::LET}, {"IF", TokenType::IF},
-    {"THEN", TokenType::THEN}, {"ELSE", TokenType::ELSE}, {"END", TokenType::END},
-    {"FOR", TokenType::FOR}, {"TO", TokenType::TO}, {"NEXT", TokenType::NEXT},
-    {"FUNCTION", TokenType::FUNCTION}, {"CALL", TokenType::CALL}, {"RETURN", TokenType::RETURN},
-    {"INPUT", TokenType::INPUT}, {"REM", TokenType::REM}, {"TRY", TokenType::TRY},
-    {"CATCH", TokenType::CATCH}, {"ARRAY", TokenType::ARRAY}
+    {"and", TokenType::AND}, {"else", TokenType::ELSE}, {"false", TokenType::FALSE},
+    {"fn", TokenType::FN}, {"for", TokenType::FOR}, {"if", TokenType::IF},
+    {"null", TokenType::NULL_TOKEN}, {"or", TokenType::OR}, {"print", TokenType::PRINT},
+    {"return", TokenType::RETURN}, {"true", TokenType::TRUE}, {"let", TokenType::LET},
+    {"while", TokenType::WHILE}, {"try", TokenType::TRY}, {"catch", TokenType::CATCH}
 };
 
 char Lexer::advance() {
@@ -17,17 +15,14 @@ char Lexer::advance() {
     col++;
     return source[current - 1];
 }
-
 char Lexer::peek() {
     if (isAtEnd()) return '\0';
     return source[current];
 }
-
 char Lexer::peekNext() {
-    if (current + 1 >= source.length()) return '\0';
+    if (current + 1 >= (int)source.length()) return '\0';
     return source[current + 1];
 }
-
 bool Lexer::match(char expected) {
     if (isAtEnd()) return false;
     if (source[current] != expected) return false;
@@ -35,11 +30,9 @@ bool Lexer::match(char expected) {
     col++;
     return true;
 }
-
 bool Lexer::isAtEnd() {
     return current >= (int)source.length();
 }
-
 Token Lexer::makeToken(TokenType type) {
     Token token;
     token.type = type;
@@ -59,34 +52,37 @@ std::vector<Token> Lexer::scanTokens() {
         switch (c) {
             case '(': tokens.push_back(makeToken(TokenType::LEFT_PAREN)); break;
             case ')': tokens.push_back(makeToken(TokenType::RIGHT_PAREN)); break;
+            case '{': tokens.push_back(makeToken(TokenType::LEFT_BRACE)); break;
+            case '}': tokens.push_back(makeToken(TokenType::RIGHT_BRACE)); break;
             case '[': tokens.push_back(makeToken(TokenType::LEFT_BRACKET)); break;
             case ']': tokens.push_back(makeToken(TokenType::RIGHT_BRACKET)); break;
             case ',': tokens.push_back(makeToken(TokenType::COMMA)); break;
             case '.': tokens.push_back(makeToken(TokenType::DOT)); break;
             case '-': tokens.push_back(makeToken(TokenType::MINUS)); break;
             case '+': tokens.push_back(makeToken(TokenType::PLUS)); break;
+            case ';': tokens.push_back(makeToken(TokenType::SEMICOLON)); break;
             case '*': tokens.push_back(makeToken(TokenType::STAR)); break;
-            case '/': tokens.push_back(makeToken(TokenType::SLASH)); break;
-            case '#': // Comment
-                while (peek() != '\n' && !isAtEnd()) advance();
+            case '!':
+                tokens.push_back(makeToken(match('=') ? TokenType::BANG_EQUAL : TokenType::BANG));
                 break;
             case '=':
                 tokens.push_back(makeToken(match('=') ? TokenType::EQUAL_EQUAL : TokenType::EQUAL));
                 break;
             case '<':
-                if (match('>')) tokens.push_back(makeToken(TokenType::BANG_EQUAL));
-                else if (match('=')) tokens.push_back(makeToken(TokenType::LESS_EQUAL));
-                else tokens.push_back(makeToken(TokenType::LESS));
+                tokens.push_back(makeToken(match('=') ? TokenType::LESS_EQUAL : TokenType::LESS));
                 break;
             case '>':
                 tokens.push_back(makeToken(match('=') ? TokenType::GREATER_EQUAL : TokenType::GREATER));
                 break;
-            case ' ':
-            case '\r':
-            case '\t':
+            case '/':
+                if (match('/')) {
+                    while (peek() != '\n' && !isAtEnd()) advance();
+                } else {
+                    tokens.push_back(makeToken(TokenType::SLASH));
+                }
                 break;
+            case ' ': case '\r': case '\t': break;
             case '\n':
-                tokens.push_back(makeToken(TokenType::NEWLINE));
                 line++;
                 col = 1;
                 break;
@@ -115,14 +111,9 @@ std::vector<Token> Lexer::scanTokens() {
                     Token t = makeToken(TokenType::NUMBER);
                     t.number_value = std::stod(t.lexeme);
                     tokens.push_back(t);
-                } else if (std::isalpha(c)) {
+                } else if (std::isalpha(c) || c == '_') {
                     while (std::isalnum(peek()) || peek() == '_') advance();
                     std::string text = source.substr(start, current - start);
-                    
-                    if (text == "REM") {
-                        while (peek() != '\n' && !isAtEnd()) advance();
-                        break;
-                    }
                     
                     if (keywords.count(text)) {
                         tokens.push_back(makeToken(keywords[text]));

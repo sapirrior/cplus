@@ -3,14 +3,14 @@
 #include <unordered_map>
 #include <memory>
 #include <vector>
-#include "Common.hpp"
+#include "../common/Value.hpp"
 
 class Stmt;
 
 struct Function {
     std::string name;
     std::vector<std::string> params;
-    std::vector<std::shared_ptr<Stmt>> body;
+    std::shared_ptr<Stmt> body;
 };
 
 class Environment {

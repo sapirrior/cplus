@@ -1,7 +1,7 @@
 #pragma once
 #include <string>
 #include <vector>
-#include "core/Common.hpp"
+#include "../common/Token.hpp"
 
 class Lexer {
     std::string source;
