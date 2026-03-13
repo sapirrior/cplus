@@ -47,7 +47,7 @@ Value LogicalExpr::evaluate(std::shared_ptr<Environment> env) {
 
 Value UnaryExpr::evaluate(std::shared_ptr<Environment> env) {
     Value r = right->evaluate(env);
-    if (op.type == TokenType::BANG) return Value(!r.isTruthy());
+    if (op.type == TokenType::BANG || op.type == TokenType::NOT) return Value(!r.isTruthy());
     if (op.type == TokenType::MINUS) return Value(-r.asNumber());
     return Value();
 }
